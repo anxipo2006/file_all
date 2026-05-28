@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Pro File Tool: nén file, hạ dung lượng PDF, chia file nhỏ cho AI như Gemini." />
+    <title>Pro File Tool | AI File Compressor</title>
+  </head>
+  <body>
+    <main id="app" class="shell">
+      <section class="hero">
+        <div class="badge">⚡ Vercel Frontend + Python Backend</div>
+        <h1>Pro File Tool</h1>
+        <p>Nén PDF lớn, hạ về dung lượng mong muốn, chia thành nhiều part nhỏ để AI đọc dễ hơn.</p>
+      </section>
+
+      <section class="panel">
+        <form id="file-form">
+          <label class="upload-zone" for="file-input">
+            <span>📄</span>
+            <strong>Chọn file cần xử lý</strong>
+            <small>PDF, ảnh, Word, Excel, PowerPoint</small>
+            <input id="file-input" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.pptx" required />
+          </label>
+
+          <div id="file-name" class="file-name">Chưa chọn file</div>
+
+          <div class="grid">
+            <label>
+              Dung lượng muốn hạ về (MB)
+              <input id="target-mb" type="number" min="1" max="2048" step="10" value="100" />
+            </label>
+            <label>
+              Giới hạn mỗi file nhỏ (MB)
+              <input id="part-mb" type="number" min="1" max="500" step="10" value="100" />
+            </label>
+          </div>
+
+          <label class="toggle">
+            <input id="split-ai" type="checkbox" checked />
+            <span>Chia thành nhiều file nhỏ cho AI</span>
+          </label>
+
+          <label>
+            Chế độ PDF
+            <select id="pdf-mode">
+              <option value="deep" selected>Nén sâu tối đa cho AI đọc</option>
+              <option value="keep_text">Giữ text nếu có thể</option>
+            </select>
+          </label>
+
+          <button id="submit-btn" type="submit">🚀 Xử lý file</button>
+        </form>
+
+        <aside class="result-card">
+          <h2>Kết quả</h2>
+          <p id="status">Sẵn sàng xử lý.</p>
+          <div id="metrics" class="metrics"></div>
+          <a id="download-link" class="download hidden" download>⬇️ Tải kết quả</a>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
