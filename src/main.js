@@ -1,80 +1,20 @@
 import './styles.css';
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
-const form = document.querySelector('#file-form');
-const fileInput = document.querySelector('#file-input');
-const fileName = document.querySelector('#file-name');
-const statusEl = document.querySelector('#status');
-const metricsEl = document.querySelector('#metrics');
-const downloadLink = document.querySelector('#download-link');
-const submitBtn = document.querySelector('#submit-btn');
-
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files?.[0];
-  fileName.textContent = file ? `${file.name} • ${formatBytes(file.size)}` : 'Chưa chọn file';
-});
-
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const file = fileInput.files?.[0];
-  if (!file) return;
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = '⏳ Đang xử lý...';
-  statusEl.textContent = 'Đang upload và xử lý file. File lớn có thể mất vài phút.';
-  metricsEl.innerHTML = '';
-  downloadLink.classList.add('hidden');
-
-  const data = new FormData();
-  data.append('file', file);
-  data.append('target_mb', document.querySelector('#target-mb').value);
-  data.append('max_part_mb', document.querySelector('#part-mb').value);
-  data.append('split_for_ai', document.querySelector('#split-ai').checked);
-  data.append('pdf_mode', document.querySelector('#pdf-mode').value);
-
-  try {
-    const response = await fetch(`${API_BASE}/process`, {
-      method: 'POST',
-      body: data,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Lỗi không xác định' }));
-      throw new Error(error.error || 'Xử lý thất bại');
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const disposition = response.headers.get('content-disposition') || '';
-    const filename = extractFilename(disposition) || `processed_${file.name}`;
-
-    downloadLink.href = url;
-    downloadLink.download = filename;
-    downloadLink.classList.remove('hidden');
-    downloadLink.textContent = `⬇️ Tải ${filename}`;
-
-    metricsEl.innerHTML = `
-      <div><strong>Trước</strong><span>${response.headers.get('x-input-size-text') || formatBytes(file.size)}</span></div>
-      <div><strong>Sau</strong><span>${response.headers.get('x-output-size-text') || formatBytes(blob.size)}</span></div>
-      <div><strong>Giảm</strong><span>${response.headers.get('x-saved-percent') || '0'}%</span></div>
-    `;
-    statusEl.textContent = 'Hoàn tất. Bạn có thể tải file kết quả.';
-  } catch (error) {
-    statusEl.textContent = `Lỗi: ${error.message}`;
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = '🚀 Xử lý file';
-  }
-});
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function extractFilename(disposition) {
-  const match = disposition.match(/filename="?([^";]+)"?/i);
-  return match?.[1];
-}
+const CATS={
+ '🧠 Master Tool':[['master_tool','Master auto pipeline']],
+ '🗜️ Nén & chia AI':[['compress','Nén file'],['compress_split_pdf','Nén + chia PDF'],['split_pdf','Chia PDF theo MB']],
+ '🌐 Dịch file':[['translate_docx','Dịch Word'],['translate_xlsx','Dịch Excel'],['translate_pptx','Dịch PowerPoint']],
+ '🔄 Chuyển đổi':[['images_to_pdf','Ảnh → PDF'],['pdf_to_docx','PDF → Word'],['docx_to_pdf','Word → PDF'],['pptx_to_pdf','PPT → PDF']],
+ '📄 PDF tools':[['merge_pdfs','Gộp PDF'],['extract_pages','Lấy trang'],['delete_pages','Xóa trang'],['rotate_pdf','Xoay PDF'],['pdf_to_images','PDF → ảnh ZIP'],['extract_text_pdf','Trích text'],['pdf_metadata','Metadata']],
+ '🖼️ Image tools':[['convert_image','Đổi format ảnh'],['resize_image','Resize ảnh'],['compress_image','Nén ảnh']],
+ '📦 Archive/Split':[['zip_files','ZIP nhiều file'],['split_binary','Chia file bất kỳ']]
+};
+const $=s=>document.querySelector(s); const cat=$('#category'), action=$('#action'), form=$('#tool-form'), file=$('#file-input'), fname=$('#file-name'), status=$('#status'), metrics=$('#metrics'), dl=$('#download-link'), btn=$('#submit-btn');
+Object.keys(CATS).forEach(k=>cat.add(new Option(k,k))); function fill(){action.innerHTML=''; CATS[cat.value].forEach(([v,t])=>action.add(new Option(t,v))); $('#goal-wrap').style.display=action.value==='master_tool'?'grid':'none';} cat.onchange=fill; action.onchange=fill; fill();
+file.onchange=()=>{const fs=[...file.files]; fname.textContent=fs.length?fs.map(f=>`${f.name} • ${fmt(f.size)}`).join(' | '):'Chưa chọn file'};
+form.onsubmit=async e=>{e.preventDefault(); if(!file.files.length)return; btn.disabled=true; btn.textContent='⏳ Đang xử lý...'; status.textContent='Đang upload/xử lý. File lớn có thể mất lâu.'; metrics.innerHTML=''; dl.classList.add('hidden');
+ const data=new FormData(); data.append('action',action.value); data.append('goal',$('#goal').value); data.append('target_mb',$('#target-mb').value); data.append('max_part_mb',$('#part-mb').value); data.append('target_lang',$('#target-lang').value); data.append('page_range',$('#page-range').value); data.append('rotate_degrees',$('#rotate').value); data.append('output_format',$('#output-format').value); data.append('max_width',$('#max-width').value);
+ [...file.files].forEach((f,i)=>data.append(i===0?'file':'files',f)); if(file.files.length===1)data.append('files',file.files[0]);
+ try{const res=await fetch(`${API_BASE}/tool`,{method:'POST',body:data}); if(!res.ok){const er=await res.json().catch(()=>({error:'Lỗi không xác định'})); throw new Error(er.error)} const blob=await res.blob(); const url=URL.createObjectURL(blob); const name=filename(res.headers.get('content-disposition'))||'result.bin'; dl.href=url; dl.download=name; dl.textContent=`⬇️ Tải ${name}`; dl.classList.remove('hidden'); metrics.innerHTML=`<div><strong>Action</strong><span>${res.headers.get('x-tool-action')||action.value}</span></div><div><strong>Plan</strong><span>${res.headers.get('x-master-plan')||'-'}</span></div><div><strong>Trước</strong><span>${res.headers.get('x-input-size-text')||'-'}</span></div><div><strong>Sau</strong><span>${res.headers.get('x-output-size-text')||fmt(blob.size)}</span></div><div><strong>Giảm</strong><span>${res.headers.get('x-saved-percent')||'0'}%</span></div>`; status.textContent='Hoàn tất.';}catch(err){status.textContent=`Lỗi: ${err.message}`;}finally{btn.disabled=false; btn.textContent='🚀 Chạy tool';}}
+function fmt(b){if(b<1024)return`${b} B`; if(b<1048576)return`${(b/1024).toFixed(1)} KB`; return`${(b/1048576).toFixed(2)} MB`}
+function filename(d){return /filename="?([^";]+)"?/i.exec(d||'')?.[1]}
